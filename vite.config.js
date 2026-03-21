@@ -8,5 +8,5 @@ export default defineConfig({
     react(),
     tailwindcss(),
   ],
-  base: '/lmu-weather-randomizer/', // GitHub Pages base URL
+  base: './', // Relative path for Vercel/GitHub Pages compatibility
 })
