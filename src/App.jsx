@@ -25,12 +25,16 @@ function App() {
       setResult(null); // Reset result on change
 
       try {
-        const year = 2025; // Previous season
-        const monthToUse = selectedTrack.defaultMonth;
-        const monthStr = monthToUse.toString().padStart(2, '0');
-        const startDate = `${year}-${monthStr}-01`;
-        const lastDay = new Date(year, monthToUse, 0).getDate();
-        const endDate = `${year}-${monthStr}-${lastDay}`;
+        const trackDate = new Date(selectedTrack.eventDate + 'T12:00:00Z');
+        const start = new Date(trackDate);
+        start.setDate(trackDate.getDate() - 14);
+        const end = new Date(trackDate);
+        end.setDate(trackDate.getDate() + 14);
+
+        const formatDate = (d) => d.toISOString().split('T')[0];
+
+        const startDate = formatDate(start);
+        const endDate = formatDate(end);
 
         const responseData = await fetchHistoricalWeather(selectedTrack.lat, selectedTrack.lon, startDate, endDate);
 
@@ -114,9 +118,14 @@ function App() {
               ▼
             </div>
           </div>
-          {/* Display the fixed month for information */}
+          {/* Display the date range for information */}
           <div className="text-xs text-slate-500 font-mono">
-            Running in: <span className="text-lmu-accent">{MONTHS.find(m => m.value === selectedTrack.defaultMonth)?.label}</span> (Fixed)
+            Target Range: <span className="text-lmu-accent">{(() => {
+              const d = new Date(selectedTrack.eventDate + 'T12:00:00Z');
+              const start = new Date(d); start.setDate(d.getDate() - 14);
+              const end = new Date(d); end.setDate(d.getDate() + 14);
+              return `${start.toISOString().split('T')[0]} to ${end.toISOString().split('T')[0]}`;
+            })()}</span> (+/- 14 days from {selectedTrack.eventDate})
           </div>
         </div>
         {loading ? (

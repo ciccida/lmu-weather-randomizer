@@ -4,56 +4,64 @@ export const TRACKS = [
         name: 'Lusail (カタール)',
         lat: 25.45,
         lon: 51.48,
-        defaultMonth: 2
+        defaultMonth: 2,
+        eventDate: '2025-02-28'
     },
     {
         id: 'imola',
         name: 'Imola (イタリア)',
         lat: 44.34,
         lon: 11.71,
-        defaultMonth: 4
+        defaultMonth: 4,
+        eventDate: '2025-04-20'
     },
     {
         id: 'spa',
         name: 'Spa (ベルギー)',
         lat: 50.44,
         lon: 5.97,
-        defaultMonth: 5
+        defaultMonth: 5,
+        eventDate: '2025-05-10'
     },
     {
         id: 'lemans',
         name: 'Le Mans (フランス)',
         lat: 47.95,
         lon: 0.21,
-        defaultMonth: 6
+        defaultMonth: 6,
+        eventDate: '2025-06-14'
     },
     {
         id: 'interlagos',
         name: 'Interlagos (ブラジル)',
         lat: -23.70,
         lon: -46.70,
-        defaultMonth: 7
+        defaultMonth: 7,
+        eventDate: '2025-07-13'
     },
     {
         id: 'cota',
         name: 'COTA (アメリカ)',
         lat: 30.13,
         lon: -97.64,
-        defaultMonth: 9
+        defaultMonth: 9,
+        eventDate: '2025-09-07'
     },
     {
         id: 'fuji',
         name: 'Fuji (日本)',
         lat: 35.37,
         lon: 138.93,
-        defaultMonth: 9
+        defaultMonth: 9,
+        eventDate: '2025-09-28'
     },
     {
         id: 'bahrain',
         name: 'Bahrain (バーレーン)',
         lat: 26.03,
         lon: 50.51,
-        defaultMonth: 11
+        defaultMonth: 11,
+        eventDate: '2025-11-08'
     }
 ];
 
