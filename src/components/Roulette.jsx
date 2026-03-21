@@ -48,16 +48,20 @@ export const Roulette = ({ items, onComplete }) => {
         if (diff > 180) diff -= 360;
         if (diff < -180) diff += 360;
         
-        const finalRot = currentAbsolute + diff;
+        // 数回転分「滑る」演出を追加（ランダムで3〜5周）
+        const extraSpins = 3 + Math.floor(Math.random() * 3);
+        const finalRot = currentAbsolute + diff + (360 * extraSpins);
         
+        // easingを利用して徐々に速度が落ちる（滑る）ようにアニメーション
         controls.start({
             rotate: finalRot,
-            transition: { type: "spring", damping: 15, stiffness: 200 }
+            transition: { type: "tween", ease: "circOut", duration: 4.0 }
         });
         
+        // アニメーション完了後に結果を反映（4.0秒のdurationに合わせて4.1秒待機）
         setTimeout(() => {
             onComplete(items[winnerIndex]);
-        }, 500);
+        }, 4100);
     };
 
     useEffect(() => {
