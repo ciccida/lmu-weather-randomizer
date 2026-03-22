@@ -4,6 +4,7 @@ import { TRACKS, MONTHS } from './data/tracks';
 import { fetchHistoricalWeather } from './services/weatherService';
 import { Roulette } from './components/Roulette';
 import { ServerConfig } from './components/ServerConfig';
+import Navbar from './components/Navbar';
 import { CloudRain } from 'lucide-react';
 
 function App() {
@@ -86,29 +87,30 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-lmu-dark text-white flex flex-col items-center py-10 px-4 font-sans">
+    <div className="min-h-screen bg-bg text-white flex flex-col items-center pt-[100px] pb-10 px-4 font-sans">
+      <Navbar />
       {/* Header */}
-      <header className="mb-10 text-center">
+      <header className="mb-6 text-center">
         <div className="flex items-center justify-center gap-3 mb-2">
-          <CloudRain size={32} className="text-lmu-accent" />
-          <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400">
-            LMU Weather Randomizer
+          <CloudRain size={28} className="text-secondary" />
+          <h1 className="text-3xl sm:text-4xl font-display italic tracking-wider font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-primary">
+            LMU WEATHER RANDOMIZER
           </h1>
         </div>
-        <p className="text-slate-500">Generate realistic weather for your private server</p>
+        <p className="text-slate-400 uppercase tracking-widest text-xs font-mono mt-1">Generate realistic weather for your private server</p>
       </header>
 
       {/* Main Content */}
       <div className="w-full max-w-4xl flex flex-col items-center min-h-[400px]">
 
         {/* Track Selector */}
-        <div className="flex flex-col items-center gap-2 mb-10 z-10">
-          <label className="text-xs text-slate-400 uppercase font-bold tracking-wider">Select Circuit</label>
-          <div className="relative group">
+        <div className="flex flex-col items-center gap-2 mb-6 z-10 w-full max-w-sm">
+          <label className="text-[10px] text-slate-400/80 uppercase font-black tracking-widest">Select Circuit</label>
+          <div className="relative group w-full">
             <select
               value={selectedTrackId}
               onChange={(e) => setSelectedTrackId(e.target.value)}
-              className="appearance-none bg-slate-800 border border-slate-600 text-white px-8 py-3 rounded-xl font-bold text-lg focus:ring-2 focus:ring-lmu-accent w-80 text-center hover:border-slate-500 transition shadow-lg cursor-pointer"
+              className="appearance-none bg-surface border border-slate-700 text-white px-6 py-2.5 rounded-xl font-bold text-base focus:ring-2 focus:ring-primary w-full text-center hover:border-slate-500 transition shadow-lg cursor-pointer"
             >
               {TRACKS.map(t => (
                 <option key={t.id} value={t.id}>{t.name}</option>
@@ -120,7 +122,7 @@ function App() {
           </div>
           {/* Display the date range for information */}
           <div className="text-xs text-slate-500 font-mono">
-            Target Range: <span className="text-lmu-accent">{(() => {
+            Target Range: <span className="text-primary">{(() => {
               const d = new Date(selectedTrack.eventDate + 'T12:00:00Z');
               const start = new Date(d); start.setDate(d.getDate() - 14);
               const end = new Date(d); end.setDate(d.getDate() + 14);
@@ -130,8 +132,8 @@ function App() {
         </div>
         {loading ? (
           <div className="animate-pulse flex flex-col items-center gap-4 mt-20">
-            <div className="w-12 h-12 border-4 border-lmu-accent border-t-transparent rounded-full animate-spin"></div>
-            <div className="text-lmu-accent font-bold tracking-widest text-sm">LOADING HISTORICAL DATA...</div>
+            <div className="w-12 h-12 border-4 border-secondary border-t-transparent rounded-full animate-spin"></div>
+            <div className="text-secondary font-bold tracking-widest text-sm uppercase">LOADING HISTORICAL DATA...</div>
           </div>
         ) : error ? (
           <div className="text-red-400 bg-red-900/20 p-6 rounded-xl border border-red-900 flex flex-col items-center gap-2">

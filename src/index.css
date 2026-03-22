@@ -1,11 +1,13 @@
 @import "tailwindcss";
 
 @theme {
-  --color-lmu-dark: #0f172a;
-  --color-lmu-accent: #38bdf8;
-  --color-lmu-card: #1e293b;
+  --color-bg: #050505;
+  --color-surface: #121212;
+  --color-primary: #ff003c;
+  --color-secondary: #00f0ff;
 
   --font-family-inter: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  --font-family-display: Orbitron, sans-serif;
 }
 
 :root {
@@ -15,8 +17,8 @@
 
   color-scheme: dark;
   color: rgba(255, 255, 255, 0.87);
-  background-color: var(--color-lmu-dark);
-  /* lmu-dark */
+  background-color: var(--color-bg);
+  /* wce-dark */
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;

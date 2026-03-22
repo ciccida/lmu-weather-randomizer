@@ -9,12 +9,28 @@ export const Roulette = ({ items, onComplete }) => {
     const N = items && items.length > 0 ? items.length : 1;
     const angle = 360 / N;
     
-    // Alternating colors with a special Gold for the race day (index 14)
-    const colors = ['#e53935', '#1e88e5'];
-    
-    const gradientStops = items ? items.map((_, i) => {
-        const c = i === 14 ? '#ffca28' : colors[i % 2];
-        return `${c} ${i * angle}deg ${(i + 1) * angle}deg`;
+    const gradientStops = items ? items.map((item, i) => {
+        const isRaceDay = i === 14;
+        let c;
+        if (isRaceDay) {
+            c = '#ffffff'; // White for absolute maximum contrast
+        } else {
+            const rain = item?.rain_sum || 0;
+            const cloud = item?.cloudcover_mean || 0;
+            
+            if (rain > 0.1) {
+                c = '#0284c7'; // Blue
+            } else if (cloud > 40) {
+                c = '#475569'; // Slate
+            } else {
+                c = '#ea580c'; // Orange
+            }
+        }
+        
+        // 0.8 degree gap for borderline using surface color matching the UI
+        const endAngle = (i + 1) * angle;
+        const gapSize = 0.8;
+        return `${c} ${i * angle}deg ${endAngle - gapSize}deg, #121212 ${endAngle - gapSize}deg ${endAngle}deg`;
     }).join(', ') : 'transparent 0deg 360deg';
 
     const startSpin = () => {
@@ -84,27 +100,27 @@ export const Roulette = ({ items, onComplete }) => {
     };
 
     return (
-        <div className="flex flex-col items-center gap-10 w-full">
-            <div className="relative mt-8">
+        <div className="flex flex-col items-center gap-6 w-full mt-2">
+            <div className="relative">
                 {/* Pointer Arrow */}
                 <div 
-                    className="absolute -top-6 left-1/2 -translate-x-1/2 z-20 w-8 h-12 bg-yellow-400 drop-shadow-[0_4px_4px_rgba(0,0,0,0.5)]"
+                    className="absolute -top-6 left-1/2 -translate-x-1/2 z-20 w-8 h-12 bg-yellow-400 drop-shadow-[0_4px_6px_rgba(0,0,0,0.6)]"
                     style={{ clipPath: 'polygon(50% 100%, 0 0, 100% 0)' }}
                 ></div>
                 
                 {/* Center Pin */}
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 w-8 h-8 bg-slate-800 rounded-full border-4 border-white drop-shadow-lg"></div>
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 w-10 h-10 bg-surface rounded-full border-[3px] border-white drop-shadow-[0_0_15px_rgba(255,0,60,0.8)]"></div>
 
                 {/* The Wheel */}
                 <motion.div 
                     style={{ 
                         rotate: wheelRotation,
                         background: `conic-gradient(${gradientStops})`,
-                        width: '440px', 
-                        height: '440px', 
+                        width: '480px', 
+                        height: '480px', 
                         borderRadius: '50%',
                         position: 'relative',
-                        boxShadow: '0 0 0 10px #1e293b, 0 10px 40px rgba(0,0,0,0.6)',
+                        boxShadow: '0 0 0 10px #121212, 0 10px 40px rgba(0,0,0,0.9)',
                         overflow: 'hidden'
                     }}
                     animate={controls}
@@ -121,19 +137,24 @@ export const Roulette = ({ items, onComplete }) => {
                                 className="absolute top-1/2 left-1/2 flex items-center justify-between font-bold text-white whitespace-nowrap px-2"
                                 style={{
                                     // Move to position and rotate outward
-                                    transform: `translate(-50%, -50%) rotate(${rotation}deg) translateY(-135px) rotate(-90deg)`,
+                                    transform: `translate(-50%, -50%) rotate(${rotation}deg) translateY(-155px) rotate(-90deg)`,
                                     transformOrigin: '50% 50%',
-                                    width: '130px',
-                                    fontSize: '11px',
-                                    textShadow: '1px 1px 2px rgba(0,0,0,0.8)',
+                                    width: '145px',
+                                    fontSize: '12px',
+                                    textShadow: i === 14 ? 'none' : '1px 1px 3px rgba(0,0,0,0.9)',
                                     color: i === 14 ? '#000' : '#fff'
                                 }}
                             >
-                                <span className={i === 14 ? "text-red-700 bg-white/90 px-1 rounded -ml-1" : "opacity-90"}>
+                                <span className={i === 14 ? "text-[#ff003c] font-black text-[14px] tracking-widest pl-1" : "opacity-90 font-bold"}>
                                     {i === 14 ? '開催日' : dateText}
                                 </span>
-                                <span className="text-[13px] drop-shadow-md mx-1">{emoji}</span>
-                                <span className="font-mono">{temp}</span>
+                                <span 
+                                    className="text-[18px] mx-1"
+                                    style={{ filter: i === 14 ? 'drop-shadow(0px 0px 3px rgba(0,0,0,1)) drop-shadow(0px 1px 2px rgba(0,0,0,1))' : 'drop-shadow(0px 1px 2px rgba(0,0,0,0.8))' }}
+                                >
+                                    {emoji}
+                                </span>
+                                <span className="font-mono text-[15px]">{temp}</span>
                             </div>
                         );
                     })}
@@ -145,7 +166,7 @@ export const Roulette = ({ items, onComplete }) => {
                 <button
                     onClick={startSpin}
                     disabled={spinning || !items || items.length === 0}
-                    className="px-8 py-3 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-lg shadow-lg transform transition active:scale-95 text-xl tracking-widest border border-cyan-400/30 w-40"
+                    className="px-8 py-3 bg-gradient-to-r from-secondary to-[#0090ff] hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed text-bg font-display font-bold rounded-lg shadow-[0_0_15px_rgba(0,240,255,0.4)] transform transition active:scale-95 text-xl tracking-widest border border-white/20 w-40"
                     title="SPIN THE WHEEL"
                 >
                     START
@@ -153,7 +174,7 @@ export const Roulette = ({ items, onComplete }) => {
                 <button
                     onClick={stopSpin}
                     disabled={!spinning}
-                    className="px-8 py-3 bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-500 hover:to-orange-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-lg shadow-lg transform transition active:scale-95 text-xl tracking-widest border border-red-400/30 w-40"
+                    className="px-8 py-3 bg-gradient-to-r from-primary to-[#cc002a] hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed text-white font-display font-bold rounded-lg shadow-[0_0_15px_rgba(255,0,60,0.4)] transform transition active:scale-95 text-xl tracking-widest border border-white/20 w-40"
                     title="STOP"
                 >
                     STOP
