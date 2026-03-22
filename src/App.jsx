@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { TRACKS, MONTHS } from './data/tracks';
 import { fetchHistoricalWeather } from './services/weatherService';
@@ -15,6 +15,18 @@ function App() {
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  
+  const resultRef = useRef(null);
+
+  // Auto-scroll when result is generated
+  useEffect(() => {
+    if (result && resultRef.current) {
+        setTimeout(() => {
+            // Offset for fixed navbar using block: start and custom padding/margin or scroll margin
+            resultRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 300); // Slight delay for framer-motion mount
+    }
+  }, [result]);
 
   const selectedTrack = TRACKS.find(t => t.id === selectedTrackId);
 
@@ -89,47 +101,52 @@ function App() {
   return (
     <div className="min-h-screen bg-bg text-white flex flex-col items-center pt-[100px] pb-10 px-4 font-sans">
       <Navbar />
-      {/* Header */}
-      <header className="mb-6 text-center">
-        <div className="flex items-center justify-center gap-3 mb-2">
-          <CloudRain size={28} className="text-secondary" />
-          <h1 className="text-3xl sm:text-4xl font-display italic tracking-wider font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-primary">
-            LMU WEATHER RANDOMIZER
-          </h1>
-        </div>
-        <p className="text-slate-400 uppercase tracking-widest text-xs font-mono mt-1">Generate realistic weather for your private server</p>
-      </header>
+      {/* Main Content Side-By-Side Layout (Desktop) */}
+      <div className="w-full max-w-6xl flex flex-col xl:flex-row items-center justify-center gap-10 xl:gap-20 mt-4 xl:mt-8">
+        
+        {/* Left Side: Info & Controls */}
+        <div className="flex flex-col items-center xl:items-start text-center xl:text-left gap-8 z-10 w-full max-w-sm">
+            <header className="flex flex-col items-center xl:items-start">
+                <div className="flex items-center gap-3 mb-2">
+                <CloudRain size={28} className="text-secondary flex-shrink-0" />
+                <h1 className="text-3xl sm:text-4xl font-display italic tracking-wider font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-primary text-balance">
+                    LMU WEATHER<br/>RANDOMIZER
+                </h1>
+                </div>
+                <p className="text-slate-400 uppercase tracking-widest text-xs font-mono mt-2">Generate realistic weather for your private server</p>
+            </header>
 
-      {/* Main Content */}
-      <div className="w-full max-w-4xl flex flex-col items-center min-h-[400px]">
-
-        {/* Track Selector */}
-        <div className="flex flex-col items-center gap-2 mb-6 z-10 w-full max-w-sm">
-          <label className="text-[10px] text-slate-400/80 uppercase font-black tracking-widest">Select Circuit</label>
-          <div className="relative group w-full">
-            <select
-              value={selectedTrackId}
-              onChange={(e) => setSelectedTrackId(e.target.value)}
-              className="appearance-none bg-surface border border-slate-700 text-white px-6 py-2.5 rounded-xl font-bold text-base focus:ring-2 focus:ring-primary w-full text-center hover:border-slate-500 transition shadow-lg cursor-pointer"
-            >
-              {TRACKS.map(t => (
-                <option key={t.id} value={t.id}>{t.name}</option>
-              ))}
-            </select>
-            <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-              ▼
+            {/* Track Selector */}
+            <div className="flex flex-col items-center xl:items-start gap-2 w-full">
+                <label className="text-[10px] text-slate-400/80 uppercase font-black tracking-widest pl-1">Select Circuit</label>
+                <div className="relative group w-full">
+                    <select
+                    value={selectedTrackId}
+                    onChange={(e) => setSelectedTrackId(e.target.value)}
+                    className="appearance-none bg-surface border border-slate-700 text-white px-6 py-3 rounded-xl font-bold text-base focus:ring-2 focus:ring-primary w-full text-center xl:text-left hover:border-slate-500 transition shadow-lg cursor-pointer"
+                    >
+                    {TRACKS.map(t => (
+                        <option key={t.id} value={t.id}>{t.name}</option>
+                    ))}
+                    </select>
+                    <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                    ▼
+                    </div>
+                </div>
+                {/* Display the date range for information */}
+                <div className="text-xs text-slate-500 font-mono mt-1">
+                    Target Range: <span className="text-primary">{(() => {
+                    const d = new Date(selectedTrack.eventDate + 'T12:00:00Z');
+                    const start = new Date(d); start.setDate(d.getDate() - 14);
+                    const end = new Date(d); end.setDate(d.getDate() + 14);
+                    return `${start.toISOString().split('T')[0]} to ${end.toISOString().split('T')[0]}`;
+                    })()}</span><br/><span className="text-[10px] opacity-60">(+/- 14 days from {selectedTrack.eventDate})</span>
+                </div>
             </div>
-          </div>
-          {/* Display the date range for information */}
-          <div className="text-xs text-slate-500 font-mono">
-            Target Range: <span className="text-primary">{(() => {
-              const d = new Date(selectedTrack.eventDate + 'T12:00:00Z');
-              const start = new Date(d); start.setDate(d.getDate() - 14);
-              const end = new Date(d); end.setDate(d.getDate() + 14);
-              return `${start.toISOString().split('T')[0]} to ${end.toISOString().split('T')[0]}`;
-            })()}</span> (+/- 14 days from {selectedTrack.eventDate})
-          </div>
         </div>
+
+        {/* Right Side: Wheel */}
+        <div className="flex flex-col items-center justify-center w-full max-w-2xl min-h-[500px]">
         {loading ? (
           <div className="animate-pulse flex flex-col items-center gap-4 mt-20">
             <div className="w-12 h-12 border-4 border-secondary border-t-transparent rounded-full animate-spin"></div>
@@ -151,10 +168,11 @@ function App() {
 
             {result && hourlyData && (
               <motion.div
+                ref={resultRef}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.2 }}
-                className="w-full flex justify-center w-full"
+                className="w-full flex justify-center w-full scroll-mt-[120px]"
               >
                 <ServerConfig weather={result} trackName={selectedTrack?.name} hourlyData={hourlyData} />
               </motion.div>
@@ -162,8 +180,9 @@ function App() {
           </>
         )}
       </div>
+    </div>
 
-      <footer className="mt-20 text-slate-600 text-xs text-center">
+      <footer className="mt-20 text-slate-600 text-xs text-center w-full border-t border-slate-800/50 pt-8 pb-4">
         Powered by Open-Meteo API • LMU Weather Randomizer v1.0
       </footer>
     </div>
