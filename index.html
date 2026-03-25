@@ -1,16 +1,737 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>WEC Sprint Series | Weather Generator</title>
+    <link rel="icon" type="image/png" href="/favicon.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Orbitron:ital,wght@0,400..900;1,400..900&display=swap" rel="stylesheet">
-    <title>LMU Weather Randomizer</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
+    <style>
+        :root { --primary: #00d2ff; --bg: #111; --panel: #1e1e1e; --accent: #ff0055; }
+        body {
+            background-color: var(--bg); color: #eaeaea; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0; display: flex; height: 100vh; overflow: hidden;
+            padding-top: 80px; box-sizing: border-box; /* Offset for navbar */
+        }
+        .sidebar, .main-content {
+            height: calc(100vh - 80px);
+            box-sizing: border-box; /* 枠線とパディングをheightに含める */
+        }
+        h2 { color: var(--primary); margin-top: 0; font-size: 1.2em; border-bottom: 1px solid #333; padding-bottom: 8px; }
+        
+        /* --- Navbar Styles --- */
+        :root {
+            --color-primary-nav: #ff003c;
+            --color-secondary-nav: #00f0ff;
+            --color-primary-glow: rgba(255, 0, 60, 0.5);
+            --color-text-nav: #ffffff;
+            --color-text-dim: #a0a0a0;
+            --font-display: 'Orbitron', 'Segoe UI', sans-serif;
+            --container-width: 1200px;
+        }
+        .navbar {
+            position: fixed; top: 0; left: 0; width: 100%; z-index: 1000;
+            padding: 1rem 0;
+            background: rgba(10, 10, 10, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            font-family: var(--font-display);
+        }
+        .navbar .container {
+            max-width: var(--container-width); margin: 0 auto; padding: 0 1rem;
+            display: flex; justify-content: space-between; align-items: center;
+            flex-wrap: nowrap; white-space: nowrap;
+        }
+        .navbar .logo img { height: 48px; width: auto; object-fit: contain; }
+        .nav-links {
+            display: flex; gap: 1.2rem; align-items: center; list-style: none; margin: 0; padding: 0;
+        }
+        .nav-links a {
+            font-family: var(--font-display);
+            font-size: clamp(0.7rem, 1vw, 0.9rem); font-weight: 600; text-transform: uppercase;
+            color: var(--color-text-nav); text-decoration: none; transition: color 0.3s ease;
+        }
+        .nav-links a:hover { color: var(--color-primary-nav); }
+        
+        /* OFFICIAL Links Accent */
+        .official-link {
+            color: var(--color-secondary-nav) !important;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            text-shadow: 0 0 5px rgba(0, 240, 255, 0.3);
+        }
+        .official-link:hover { color: #fff !important; }
+
+        .btn-social {
+            background: var(--color-primary-nav); padding: 0.5rem 1.25rem; border-radius: 4px;
+            clip-path: polygon(10% 0, 100% 0, 100% 80%, 90% 100%, 0 100%, 0 20%);
+        }
+        .btn-social:hover {
+            background: #fff; color: var(--color-primary-nav) !important;
+            transform: translateY(-2px); box-shadow: 0 0 15px var(--color-primary-glow);
+        }
+        .header-sponsors {
+            display: flex; align-items: center; gap: 1rem; margin-left: 1rem;
+            padding-left: 1.5rem; border-left: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .supported-by { font-size: 0.7rem; color: var(--color-text-dim); font-weight: 700; }
+        .header-sponsors img { height: 30px; transition: transform 0.3s; }
+        .header-sponsors img:hover { transform: scale(1.05); }
+
+        @media (max-width: 1024px) { .header-sponsors { display: none; } }
+        /* --- End Navbar Styles --- */
+
+        /* 左側：設定パネル */
+        .sidebar { 
+            width: 420px; background: var(--panel); padding: 25px; overflow-y: auto; 
+            box-shadow: 2px 0 15px rgba(0,0,0,0.8); z-index: 10; border-right: 1px solid #333;
+        }
+        
+        /* 右側：メインコンテンツ */
+        .main-content { 
+            flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; 
+            position: relative; overflow-y: auto; background: #0a0a0a;
+        }
+        
+        /* フォーム要素 */
+        .form-group { margin-bottom: 15px; }
+        label { display: block; font-size: 0.85em; margin-bottom: 5px; color: #aaa; text-transform: uppercase; letter-spacing: 1px;}
+        
+        /* 入力枠 */
+        select, input[type="number"], input[type="text"] {
+            width: 100%; padding: 10px; padding-right: 5px; background: #2a2a2a; color: #fff; 
+            border: 1px solid #444; border-radius: 4px; box-sizing: border-box; font-size: 1em;
+        }
+        select:focus, input:focus { outline: none; border-color: var(--primary); }
+        .flex-row { display: flex; gap: 10px; align-items: center; }
+        
+        /* 並んだ入力枠が縮みすぎないように最小幅を設定 */
+        .flex-row input { flex: 1; min-width: 70px; }
+        
+        /* セッションカード */
+        .session-card { background: #181818; border: 1px solid #333; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+        .session-card h3 { margin: 0 0 10px 0; font-size: 1em; color: #ffcc00; }
+        .checkbox-label { display: flex; align-items: center; gap: 8px; font-size: 0.9em; cursor: pointer; color: #ccc; margin-bottom: 12px;}
+        .checkbox-label input { width: 16px; height: 16px; accent-color: var(--primary); }
+        
+        /* ボタン */
+        .btn {
+            background: #2a2a2a; color: white; border: 1px solid var(--primary); padding: 12px; 
+            cursor: pointer; border-radius: 6px; font-weight: bold; width: 100%; transition: 0.3s; 
+            text-transform: uppercase; letter-spacing: 1px; margin-top: 10px;
+        }
+        .btn:hover:not(:disabled) { background: var(--primary); color: #000; box-shadow: 0 0 15px rgba(0, 210, 255, 0.4); }
+        .btn-spin { background: var(--accent); border-color: var(--accent); font-size: 1.2em; padding: 15px;}
+        .btn-spin:hover:not(:disabled) { background: #ff4081; color: white; box-shadow: 0 0 20px var(--accent); }
+        .btn:disabled { opacity: 0.4; cursor: not-allowed; border-color: #555;}
+
+        /* ルーレット画面 */
+        #view-wheel { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; }
+        .wheel-container { position: relative; display: none; margin-top: 20px; margin-bottom: 10px;}
+        canvas { border-radius: 50%; box-shadow: 0 0 40px rgba(0, 0, 0, 0.9); border: 6px solid #222; }
+        
+        /* 頂点の三角ポインター（変更なし） */
+        .pointer {
+            position: absolute; top: -30px; left: 50%; transform: translateX(-50%);
+            border-left: 20px solid transparent; border-right: 20px solid transparent; border-top: 40px solid var(--accent); 
+            z-index: 10; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.8));
+        }
+
+        /* ルーレット操作ボタンエリア */
+        .wheel-controls { display: flex; gap: 15px; width: 100%; max-width: 400px; margin-top: 20px; }
+
+        /* 結果ダッシュボード画面 */
+        #view-result { display: none; width: 100%; height: 100%; padding: 40px; box-sizing: border-box; align-items: flex-start; justify-content: center; }
+        .dashboard { width: 100%; max-width: 1000px; }
+        .dash-header { text-align: center; margin-bottom: 40px; border-bottom: 1px solid #333; padding-bottom: 20px;}
+        .dash-header h1 { margin: 0; color: var(--primary); font-size: 2.5em; text-transform: uppercase; letter-spacing: 2px;}
+        .dash-header p { margin: 10px 0 0 0; color: #888; font-size: 1.1em; }
+        
+        /* 結果テーブル */
+        .result-session { background: #1e1e1e; border-radius: 10px; margin-bottom: 30px; overflow: hidden; border: 1px solid #333; box-shadow: 0 5px 15px rgba(0,0,0,0.5);}
+        .rs-title { background: #2a2a2a; padding: 15px 20px; font-weight: bold; font-size: 1.2em; color: var(--primary); display: flex; justify-content: space-between; border-bottom: 1px solid #444;}
+        .rs-title span:last-child { color: #aaa; font-size: 0.85em; font-weight: normal; }
+        table { width: 100%; border-collapse: collapse; text-align: left; }
+        th, td { padding: 12px 20px; border-bottom: 1px solid #2a2a2a; }
+        th { background: #151515; color: #888; font-weight: normal; text-transform: uppercase; font-size: 0.85em; }
+        tr:last-child td { border-bottom: none; }
+        tr:hover { background: #222; }
+        
+        .sky-clear { color: #e0e0e0; }
+        .sky-cloudy { color: #b0bec5; }
+        .sky-rain { color: #00b0ff; font-weight: bold; }
+        .sky-storm { color: #ff3d00; font-weight: bold; }
+        .next-day-badge { font-size: 0.8em; color: #ffcc00; margin-left: 5px; font-weight: normal;}
+
+    </style>
+</head>
+<body>
+
+<nav class="navbar">
+    <div class="container">
+        <a href="https://wec-sprint-series.vercel.app/" class="logo">
+            <img src="/assets/logo.png" alt="WEC Sprint Series" />
+        </a>
+        <ul class="nav-links">
+            <li><a href="https://wec-sprint-series.vercel.app/#news">最新ニュース</a></li>
+            <li><a href="https://wec-sprint-series.vercel.app/#latest">最新の配信</a></li>
+            <li><a href="https://wec-sprint-series.vercel.app/#schedule">スケジュール</a></li>
+            <li><a href="https://wec-sprint-series.vercel.app/#results">レース結果</a></li>
+
+            <!-- App Tools -->
+            <li><a href="#" onclick="window.scrollTo({top:0, behavior:'smooth'}); return false;" class="nav-tool-link" style="color:var(--color-primary-nav);">WEATHER RANDOMIZER</a></li>
+            <li><a href="https://wec-sprint-series.vercel.app/calculator" class="nav-tool-link" style="font-weight:bold; color:var(--color-secondary-nav);">PIT CALC (TRIAL)</a></li>
+
+            <li class="header-sponsors">
+                <span class="supported-by">SUPPORTED BY:</span>
+                <a href="https://www.endless-sport.co.jp/" target="_blank" rel="noopener noreferrer">
+                    <img src="/assets/sponsor-endless.png" alt="ENDLESS" />
+                </a>
+                <a href="https://jp.pimax.com/" target="_blank" rel="noopener noreferrer">
+                    <img src="/assets/sponsor-partner.png" alt="Pimax" />
+                </a>
+            </li>
+            <li>
+                <a href="https://www.youtube.com/@WECSS81" target="_blank" rel="noopener noreferrer" class="btn-social">
+                    YouTube
+                </a>
+            </li>
+        </ul>
+    </div>
+</nav>
+
+<div class="sidebar">
+    <!-- Official Links at the top of the sidebar -->
+    <div style="margin-bottom: 25px; border-bottom: 1px solid #333; padding-bottom: 25px;">
+        <h3 style="margin: 0 0 10px 0; font-size: 0.85em; color: #888; text-transform: uppercase; letter-spacing: 1px;">Official Links</h3>
+        <div style="display: flex; gap: 10px;">
+            <a href="https://www.fiawec.com/" target="_blank" rel="noopener noreferrer" class="btn" style="flex: 1; text-align:center; padding: 10px; text-decoration:none; margin: 0; background: #1a1a1a; border-color: #333; color: #ccc; font-size: 0.8em;">
+                WEC
+            </a>
+            <a href="https://www.europeanlemansseries.com/" target="_blank" rel="noopener noreferrer" class="btn" style="flex: 1; text-align:center; padding: 10px; text-decoration:none; margin: 0; background: #1a1a1a; border-color: #333; color: #ccc; font-size: 0.8em;">
+                ELMS
+            </a>
+        </div>
+    </div>
+
+    <h2>1. Event Settings</h2>
+    <div class="form-group">
+        <label>Circuit</label>
+        <select id="circuitSelect"></select>
+    </div>
+    <div class="form-group">
+        <label>Target Date (Race Day)</label>
+        <div class="flex-row">
+            <input type="number" id="targetYear" placeholder="YYYY" value="2025">
+            <input type="number" id="targetMonth" placeholder="MM" min="1" max="12" value="6">
+            <input type="number" id="targetDay" placeholder="DD" min="1" max="31" value="15">
+        </div>
+    </div>
+
+    <h2>2. Session Settings</h2>
+    <div class="session-card" id="card-practice">
+        <h3>Practice (Day 1: N-2)</h3>
+        <label class="checkbox-label"><input type="checkbox" class="rand-time" checked> Random Start Time</label>
+        <div class="flex-row form-group">
+            <label style="min-width: 60px;">Start</label>
+            <input type="number" class="st-h" placeholder="HH" disabled min="0" max="23"> :
+            <input type="number" class="st-m" placeholder="MM" disabled min="0" max="55" step="5">
+        </div>
+        <div class="flex-row form-group">
+            <label style="min-width: 170px;">Duration (Max 2h45m)</label>
+            <input type="number" class="dur-h" value="0" min="0" max="2"> h
+            <input type="number" class="dur-m" value="5" min="0" max="55" step="5"> m
+        </div>
+    </div>
+    
+    <div class="session-card" id="card-qualify">
+        <h3>Qualifying (Day 2: N-1)</h3>
+        <label class="checkbox-label"><input type="checkbox" class="rand-time" checked> Random Start Time</label>
+        <div class="flex-row form-group">
+            <label style="min-width: 60px;">Start</label>
+            <input type="number" class="st-h" placeholder="HH" disabled min="0" max="23"> :
+            <input type="number" class="st-m" placeholder="MM" disabled min="0" max="55" step="5">
+        </div>
+        <div class="flex-row form-group">
+            <label style="min-width: 170px;">Duration (Max 2h45m)</label>
+            <input type="number" class="dur-h" value="0" min="0" max="2"> h
+            <input type="number" class="dur-m" value="5" min="0" max="55" step="5"> m
+        </div>
+    </div>
+
+    <div class="session-card" id="card-race">
+        <h3>Race (Day 3: N)</h3>
+        <label class="checkbox-label"><input type="checkbox" class="rand-time" checked> Random Start Time</label>
+        <div class="flex-row form-group">
+            <label style="min-width: 60px;">Start</label>
+            <input type="number" class="st-h" placeholder="HH" disabled min="0" max="23"> :
+            <input type="number" class="st-m" placeholder="MM" disabled min="0" max="55" step="5">
+        </div>
+        <div class="flex-row form-group">
+            <label style="min-width: 170px;">Duration (Max 24h0m)</label>
+            <input type="number" class="dur-h" value="6" min="0" max="24"> h
+            <input type="number" class="dur-m" value="0" min="0" max="55" step="5"> m
+        </div>
+    </div>
+
+    <button id="fetchBtn" class="btn">Fetch Weather Data</button>
+</div>
+
+<div class="main-content">
+    
+    <div id="view-wheel">
+        <div id="statusMsg" style="color:#666; font-size:1.2em; text-align:center;">
+            Configure settings and fetch data<br>to generate weather.
+        </div>
+        <div class="wheel-container" id="wheelContainer">
+            <div class="pointer"></div>
+            <canvas id="wheelCanvas" width="500" height="500"></canvas>
+            
+            <div class="wheel-controls">
+                <button id="spinStartBtn" class="btn btn-spin" style="margin-top:0; flex:1;">START</button>
+                <button id="spinStopBtn" class="btn btn-spin" style="margin-top:0; flex:1; background:#444; border-color:#444;" disabled>STOP</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="view-result">
+        <div class="dashboard">
+            <div class="dash-header">
+                <h1 id="resCircuitName">Circuit Name</h1>
+                <p id="resTargetDate">Target Date: YYYY-MM-DD</p>
+            </div>
+            <div id="result-tables"></div>
+            <div style="text-align: center; margin-top: 40px;">
+                <button class="btn" style="width: 250px;" onclick="showWheelView()">← Back to Generator</button>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    // --- 1. 定数と初期化 ---
+    const circuits = {
+        "Bahrain": { lat: 26.03, lon: 50.51 },
+        "Circuit de la Sarthe (Le Mans)": { lat: 47.95, lon: 0.21 },
+        "Paul Ricard": { lat: 43.25, lon: 5.79 },
+        "COTA": { lat: 30.13, lon: -97.64 },
+        "Fuji Speedway": { lat: 35.37, lon: 138.93 },
+        "Imola": { lat: 44.34, lon: 11.71 },
+        "Interlagos": { lat: -23.70, lon: -46.70 },
+        "Lusail": { lat: 25.45, lon: 51.48 },
+        "Monza": { lat: 45.62, lon: 9.28 },
+        "Portimao": { lat: 37.23, lon: -8.63 },
+        "Sebring": { lat: 27.45, lon: -81.35 },
+        "Silverstone": { lat: 52.07, lon: -1.02 },
+        "Spa-Francorchamps": { lat: 50.44, lon: 5.97 }
+    };
+
+    const circuitSelect = document.getElementById('circuitSelect');
+    Object.keys(circuits).forEach(name => {
+        const opt = document.createElement('option');
+        opt.value = name; opt.textContent = name;
+        if(name.includes("Le Mans")) opt.selected = true;
+        circuitSelect.appendChild(opt);
+    });
+
+    // ランダム時間のON/OFF
+    document.querySelectorAll('.rand-time').forEach(cb => {
+        cb.addEventListener('change', (e) => {
+            const parent = e.target.closest('.session-card');
+            parent.querySelector('.st-h').disabled = e.target.checked;
+            parent.querySelector('.st-m').disabled = e.target.checked;
+        });
+    });
+
+    // Durationの自動制限（バリデーション）
+    document.querySelectorAll('.session-card').forEach(card => {
+        const hInput = card.querySelector('.dur-h');
+        const mInput = card.querySelector('.dur-m');
+        const type = card.id.split('-')[1]; 
+
+        const enforceLimits = () => {
+            let h = parseInt(hInput.value) || 0;
+            let m = parseInt(mInput.value) || 0;
+            let total = h * 60 + m;
+
+            // 制限ルールの適用
+            if (type === 'practice' || type === 'qualify') {
+                if (total < 5) total = 5;       // 最小5分
+                if (total > 165) total = 165;   // 最大2時間45分
+            } else if (type === 'race') {
+                if (total < 5) total = 5;       // 最小5分
+                if (total > 1440) total = 1440; // 最大24時間
+            }
+
+            hInput.value = Math.floor(total / 60);
+            mInput.value = total % 60;
+        };
+
+        hInput.addEventListener('change', enforceLimits);
+        mInput.addEventListener('change', enforceLimits);
+    });
+
+    // 日付加算ユーティリティ
+    function addDaysStr(dateStr, days) {
+        const [y, m, d] = dateStr.split('-').map(Number);
+        const date = new Date(y, m - 1, d + days);
+        return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    }
+
+    // --- 2. APIデータ取得 ---
+    let apiDataCache = null;
+    let rouletteDays = [];
+    let currentCenterDateStr = "";
+
+    document.getElementById('fetchBtn').addEventListener('click', async () => {
+        const btn = document.getElementById('fetchBtn');
+        const status = document.getElementById('statusMsg');
+        
+        const y = document.getElementById('targetYear').value;
+        const m = document.getElementById('targetMonth').value.padStart(2, '0');
+        const d = document.getElementById('targetDay').value.padStart(2, '0');
+        currentCenterDateStr = `${y}-${m}-${d}`;
+        const loc = circuits[circuitSelect.value];
+
+        // 24時間レース（N+1日）もカバーするため、十分な余裕を持って取得
+        const fetchStartStr = addDaysStr(currentCenterDateStr, -16);
+        const fetchEndStr = addDaysStr(currentCenterDateStr, 14);
+        
+        btn.disabled = true;
+        status.innerHTML = "Fetching Historical Data...<br>Please wait.";
+
+        const url = `https://archive-api.open-meteo.com/v1/archive?latitude=${loc.lat}&longitude=${loc.lon}&start_date=${fetchStartStr}&end_date=${fetchEndStr}&daily=temperature_2m_max,precipitation_sum,weather_code&hourly=temperature_2m,precipitation,cloudcover&timezone=auto`;
+
+        try {
+            const res = await fetch(url);
+            if (!res.ok) throw new Error("API Request Failed");
+            apiDataCache = await res.json();
+            
+            rouletteDays = [];
+            const daily = apiDataCache.daily;
+            for(let i=2; i<daily.time.length; i++) {
+                rouletteDays.push({ 
+                    date: daily.time[i], 
+                    rain: daily.precipitation_sum[i],
+                    code: daily.weather_code[i] 
+                });
+            }
+            
+            drawWheel();
+            document.getElementById('wheelContainer').style.display = 'flex';
+            document.getElementById('wheelContainer').style.flexDirection = 'column';
+            document.getElementById('wheelContainer').style.alignItems = 'center';
+            status.style.display = 'none';
+        } catch (err) {
+            status.innerHTML = `<span style="color:#ff3d00">Error: ${err.message}</span>`;
+        } finally {
+            btn.disabled = false;
+        }
+    });
+
+    // --- 3. ルーレット処理（変更箇所） ---
+    const canvas = document.getElementById('wheelCanvas');
+    const ctx = canvas.getContext('2d');
+    let startAngle = 0;
+    
+    let animationId;
+    let spinState = 'idle';
+    let stopStartTime = 0;
+    let startAngleAtStop = 0;
+    let targetAngle = 0;
+    const SPIN_SPEED = 8;
+
+    function drawWheel() {
+        if(!rouletteDays.length) return;
+        const arc = 2 * Math.PI / rouletteDays.length;
+        ctx.clearRect(0,0,500,500);
+
+        // Canvasの基本設定（既存の定数をローカルで参照）
+        const outsideRadius = 240;
+        const baseTextRadius = 190; // 元々の定数textRadius(190)
+        const insideRadius = 40;
+        const whiteBorderRadius = 175; // 白い部分の境界半径 (outsideRadius 240)
+
+        for(let i = 0; i < rouletteDays.length; i++) {
+            const angle = startAngle + i * arc;
+            const rain = rouletteDays[i].rain;
+            const code = rouletteDays[i].code;
+            const isTargetN = (rouletteDays[i].date === currentCenterDateStr);
+            
+            // 天候による色分け
+            let sliceColor = "#ff9800"; // デフォルト：オレンジ（晴れ優勢）
+            if (rain > 5.0) sliceColor = "#1565c0"; // 濃い青（大雨）
+            else if (rain > 0.0) sliceColor = "#03a9f4"; // 水色（雨優勢）
+            else if (code >= 3) sliceColor = "#78909c"; // グレー（曇り/霧など）
+            
+            // --- 修正箇所：スライスの塗りつぶしロジック ---
+            // 提示画像：isTargetNの場合、外側は白、内側は天候色。
+            if (isTargetN) {
+                // 1. 天候色で全体を塗りつぶし、strokeを引く（区切り線の下地）
+                ctx.fillStyle = sliceColor;
+                ctx.beginPath();
+                ctx.arc(250, 250, outsideRadius, angle, angle + arc, false);
+                ctx.arc(250, 250, insideRadius, angle + arc, angle, true);
+                ctx.fill();
+                ctx.lineWidth = 1;
+                ctx.strokeStyle = "rgba(0,0,0,0.3)";
+                ctx.stroke(); // 区切り線
+
+                // 2. 外側の円弧を白で上書き（outsideRadiusからwhiteBorderRadiusまでを白で塗る）
+                ctx.fillStyle = "#ffffff"; // 白
+                ctx.beginPath();
+                ctx.arc(250, 250, outsideRadius, angle, angle + arc, false);
+                ctx.arc(250, 250, whiteBorderRadius, angle + arc, angle, true);
+                ctx.fill();
+            } else {
+                // 通常日は天候色で全体を塗りつぶし、strokeを引く（既存のロジック）
+                ctx.fillStyle = sliceColor;
+                ctx.beginPath();
+                ctx.arc(250, 250, outsideRadius, angle, angle + arc, false);
+                ctx.arc(250, 250, insideRadius, angle + arc, angle, true);
+                ctx.fill();
+                ctx.lineWidth = 1;
+                ctx.strokeStyle = "rgba(0,0,0,0.3)";
+                ctx.stroke(); // 区切り線
+            }
+            // ------------------------------------------
+
+            // --- 修正箇所：テキスト描画ロジック ---
+            ctx.save();
+
+            // TARGET用半径。外縁近く。
+            const textRadiusForThisSlice = isTargetN ? outsideRadius - 35 : baseTextRadius; 
+            
+            // translateでテキスト配置中心（ポインター方向）へ
+            const textX = 250 + Math.cos(angle + arc / 2) * textRadiusForThisSlice;
+            const textY = 250 + Math.sin(angle + arc / 2) * textRadiusForThisSlice;
+            ctx.translate(textX, textY);
+            
+            // rotateでポインター方向へ垂直な基準を作る
+            ctx.rotate(angle + arc / 2 + Math.PI / 2); // 通常日もTARGETも必要
+
+            if (isTargetN) {
+                // --- 基準日Nの縦書きTarget ---
+                ctx.fillStyle = "#000"; // 白・オレンジ両方に見やすい黒
+                ctx.font = 'bold 18px sans-serif'; // フォント。提示画像に合わせてArial系以外
+                
+                const targetText = "★";
+                const lineHeight = 19; // 行間
+
+                ctx.textAlign = 'center'; // 回転しているので、fillText(0, j*lineHeight)で垂直方向に中央
+                ctx.textBaseline = 'top'; // 上基準で配置開始
+
+                // 外側（配置中心）から内側（色の領域）へ向かって描画
+                for (let j = 0; j < targetText.length; j++) {
+                    // ポインター方向へ垂直になっているので、Y方向にずらせば内側へいく。
+                    ctx.fillText(targetText[j], 0, j * lineHeight); 
+                }
+
+            } else {
+                // --- 通常日の日付 (既存のロジックをリファクタリング) ---
+                // 既存の回転ロジック `ctx.rotate(angle + arc / 2 + Math.PI / 2);` はtranslate後に既に適用済み。
+
+                ctx.fillStyle = rain > 0 ? "#fff" : "#fff";
+                ctx.font = '13px Arial';
+                ctx.textAlign = 'center'; // 中央揃え
+                ctx.textBaseline = 'middle'; // 中央基準
+
+                let text = rouletteDays[i].date.slice(5); // 06-15など
+                // translate中心(baseTextRadius=190)に日付を描画。回転しているので0,0で中央。
+                ctx.fillText(text, 0, 0); 
+            }
+            ctx.restore();
+            // ------------------------------------------
+        }
+    }
+
+    const startBtn = document.getElementById('spinStartBtn');
+    const stopBtn = document.getElementById('spinStopBtn');
+
+    startBtn.addEventListener('click', () => {
+        if(spinState !== 'idle') return;
+        spinState = 'spinning';
+        startBtn.disabled = true; startBtn.style.background = "#444"; startBtn.style.borderColor = "#444";
+        stopBtn.disabled = false; stopBtn.style.background = "var(--accent)"; stopBtn.style.borderColor = "var(--accent)";
+        animateWheel();
+    });
+
+    stopBtn.addEventListener('click', () => {
+        if(spinState !== 'spinning') return;
+        spinState = 'stopping';
+        stopStartTime = Date.now();
+        startAngleAtStop = startAngle;
+        
+        const extraRotations = 5 * Math.PI * 2; 
+        const randomOffset = Math.random() * Math.PI * 2;
+        targetAngle = startAngleAtStop + extraRotations + randomOffset;
+        
+        stopBtn.disabled = true; stopBtn.style.background = "#444"; stopBtn.style.borderColor = "#444";
+    });
+
+    function animateWheel() {
+        if (spinState === 'spinning') {
+            startAngle += (SPIN_SPEED * Math.PI / 180);
+            drawWheel();
+            animationId = requestAnimationFrame(animateWheel);
+        } else if (spinState === 'stopping') {
+            const elapsed = Date.now() - stopStartTime;
+            const duration = 5000;
+            if (elapsed >= duration) {
+                spinState = 'idle';
+                startAngle = targetAngle;
+                drawWheel();
+                
+                startBtn.disabled = false; startBtn.style.background = "var(--accent)"; startBtn.style.borderColor = "var(--accent)";
+                const arc = 2 * Math.PI / rouletteDays.length;
+                let degrees = (270 - (startAngle * 180 / Math.PI)) % 360;
+                if (degrees < 0) degrees += 360;
+                const index = Math.floor(degrees / (arc * 180 / Math.PI));
+                
+                setTimeout(() => generateFinalNodes(rouletteDays[index].date), 600);
+                return;
+            }
+            const t = elapsed / duration;
+            const easeOut = 1 - Math.pow(1 - t, 4);
+            startAngle = startAngleAtStop + (targetAngle - startAngleAtStop) * easeOut;
+            drawWheel();
+            animationId = requestAnimationFrame(animateWheel);
+        }
+    }
+
+    // --- 4. 補間と結果表示ロジック（変更なし） ---
+    function getSkyCondition(cloudcover, rain) {
+        if (rain > 2.0) return { text: "Heavy Rain", class: "sky-storm", hasRain: true };
+        if (rain > 0.5) return { text: "Rain", class: "sky-rain", hasRain: true };
+        if (rain > 0.0) return { text: "Drizzle", class: "sky-rain", hasRain: true };
+        if (cloudcover > 85) return { text: "Overcast", class: "sky-cloudy", hasRain: false };
+        if (cloudcover > 50) return { text: "Mostly Cloudy", class: "sky-cloudy", hasRain: false };
+        if (cloudcover > 20) return { text: "Partially Cloudy", class: "sky-clear", hasRain: false };
+        return { text: "Clear", class: "sky-clear", hasRain: false };
+    }
+
+    function interpolate(val1, val2, fraction) { return val1 + (val2 - val1) * fraction; }
+
+    function getSessionInput(idPrefix) {
+        const card = document.getElementById(`card-${idPrefix}`);
+        const isRand = card.querySelector('.rand-time').checked;
+        const totalMin = (parseInt(card.querySelector('.dur-h').value) || 0) * 60 + (parseInt(card.querySelector('.dur-m').value) || 0);
+
+        let stH, stM;
+        if (isRand) {
+            const minStartMin = 8 * 60; 
+            const maxStartMin = 18 * 60; 
+            const randMin = minStartMin + Math.floor(Math.random() * (maxStartMin - minStartMin));
+            const roundedRandMin = Math.floor(randMin / 5) * 5;
+            stH = Math.floor(roundedRandMin / 60);
+            stM = roundedRandMin % 60;
+        } else {
+            stH = parseInt(card.querySelector('.st-h').value) || 0;
+            stM = parseInt(card.querySelector('.st-m').value) || 0;
+        }
+        return { stH, stM, totalMin };
+    }
+
+    function generateFinalNodes(raceDateStr) {
+        document.getElementById('resCircuitName').textContent = circuitSelect.value;
+        document.getElementById('resTargetDate').textContent = `Race Date (N): ${raceDateStr}`;
+        const container = document.getElementById('result-tables');
+        container.innerHTML = '';
+
+        const sessions = [
+            { name: "Practice", dateOffset: -2, inputs: getSessionInput("practice") },
+            { name: "Qualifying", dateOffset: -1, inputs: getSessionInput("qualify") },
+            { name: "Race", dateOffset: 0, inputs: getSessionInput("race") }
+        ];
+
+        sessions.forEach(sess => {
+            const baseDateStr = addDaysStr(raceDateStr, sess.dateOffset);
+            container.innerHTML += buildSessionTable(sess.name, baseDateStr, sess.inputs);
+        });
+
+        document.getElementById('view-wheel').style.display = 'none';
+        document.getElementById('view-result').style.display = 'flex';
+    }
+
+    function showWheelView() {
+        document.getElementById('view-result').style.display = 'none';
+        document.getElementById('view-wheel').style.display = 'flex';
+    }
+
+    function buildSessionTable(name, baseDateStr, config) {
+        const fractions = [0, 0.25, 0.50, 0.75, 1.0];
+        const nodeLabels = ["Start", "25%", "50%", "75%", "Finish"];
+        let rows = '';
+
+        fractions.forEach((frac, idx) => {
+            const elapsedMin = config.totalMin * frac;
+            const absoluteMin = (config.stH * 60) + config.stM + elapsedMin;
+
+            const dayOffset = Math.floor(absoluteMin / 1440);
+            const nodeH = Math.floor((absoluteMin % 1440) / 60);
+            const nodeM = Math.floor(absoluteMin % 60);
+
+            const nodeDateStr = addDaysStr(baseDateStr, dayOffset);
+            
+            const ceilAbsoluteMin = absoluteMin + 60 - nodeM; 
+            const ceilDayOffset = Math.floor(ceilAbsoluteMin / 1440);
+            const ceilNodeH = Math.floor((ceilAbsoluteMin % 1440) / 60);
+            const ceilDateStr = addDaysStr(baseDateStr, ceilDayOffset);
+
+            const hourFloorStr = `${nodeDateStr}T${String(nodeH).padStart(2, '0')}:00`;
+            const hourCeilStr = `${ceilDateStr}T${String(ceilNodeH).padStart(2, '0')}:00`;
+
+            const hourly = apiDataCache.hourly;
+            const idxFloor = hourly.time.indexOf(hourFloorStr);
+            const idxCeil = hourly.time.indexOf(hourCeilStr);
+
+            let temp = 20, rain = 0, cloud = 0;
+            
+            if (idxFloor !== -1 && idxCeil !== -1) {
+                const minFraction = nodeM / 60.0;
+                temp = interpolate(hourly.temperature_2m[idxFloor]||20, hourly.temperature_2m[idxCeil]||20, minFraction);
+                rain = interpolate(hourly.precipitation[idxFloor]||0, hourly.precipitation[idxCeil]||0, minFraction);
+                cloud = interpolate(hourly.cloudcover[idxFloor]||0, hourly.cloudcover[idxCeil]||0, minFraction);
+            } else if (idxFloor !== -1) {
+                temp = hourly.temperature_2m[idxFloor]||20; rain = hourly.precipitation[idxFloor]||0; cloud = hourly.cloudcover[idxFloor]||0;
+            }
+
+            const timeStr = `${String(nodeH).padStart(2, '0')}:${String(nodeM).padStart(2, '0')}`;
+            const dayBadge = dayOffset > 0 ? `<span class="next-day-badge">(+${dayOffset}d)</span>` : "";
+            
+            const skyInfo = getSkyCondition(cloud, rain);
+            
+            let rainChance = 0;
+            if (skyInfo.hasRain) {
+                rainChance = Math.min(100, Math.round(20 + (rain * 20)));
+            }
+
+            rows += `
+                <tr>
+                    <td>Slot ${idx + 1} <span style="color:#888; font-size:0.85em; margin-left:8px;">(${nodeLabels[idx]})</span></td>
+                    <td style="font-weight:bold; color:var(--primary);">${timeStr} ${dayBadge}</td>
+                    <td class="${skyInfo.class}">${skyInfo.text}</td>
+                    <td>${rainChance} %</td>
+                    <td>${Math.round(temp)} °C</td>
+                </tr>
+            `;
+        });
+
+        return `
+            <div class="result-session">
+                <div class="rs-title">
+                    <span>${name}</span>
+                    <span>Start Date: ${baseDateStr}</span>
+                </div>
+                <table>
+                    <thead><tr><th>Node</th><th>Time</th><th>Sky</th><th>Chance of Rain</th><th>Temp</th></tr></thead>
+                    <tbody>${rows}</tbody>
+                </table>
+            </div>
+        `;
+    }
+</script>
+</body>
 </html>
